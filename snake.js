@@ -1,17 +1,37 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+const startBtn = document.getElementById("startBtn");
+const restartBtn = document.getElementById("restartBtn");
+
 const boxSize = 20;
 const canvasSize = 400;
-let snake = [{x: 200, y: 200}];
-let direction = "RIGHT";
-let food = spawnFood();
-let score = 0;
-let isGameOver = false;
 
-document.addEventListener("keydown", changeDirection);
+// Initial game state
+let snake, direction, food, score, isAlive, gameLoopId;
+
+function initGame() {
+    snake = [{x: 200, y: 200}];
+    direction = "RIGHT";
+    food = spawnFood();
+    score = 0;
+    isAlive = true;
+    draw();
+}
+
+function startGame() {
+    if (gameLoopId) clearTimeout(gameLoopId);
+    initGame();
+    gameLoop();
+}
+
+function gameOver() {
+    isAlive = false;
+    alert("Game Over! Your score: " + score);
+}
 
 function changeDirection(e) {
+    if (!isAlive) return;
     if (e.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
     else if (e.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
     else if (e.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
@@ -43,7 +63,8 @@ function draw() {
 }
 
 function update() {
-    if (isGameOver) return;
+    if (!isAlive) return;
+
     let head = {...snake[0]};
     if (direction === "UP") head.y -= boxSize;
     else if (direction === "DOWN") head.y += boxSize;
@@ -56,8 +77,7 @@ function update() {
         head.y < 0 || head.y >= canvasSize ||
         snake.some(part => part.x === head.x && part.y === head.y)
     ) {
-        isGameOver = true;
-        alert("Game Over! Your score: " + score);
+        gameOver();
         return;
     }
 
@@ -72,12 +92,21 @@ function update() {
 }
 
 function gameLoop() {
-    if (!isGameOver) {
+    if (isAlive) {
         update();
         draw();
-        setTimeout(gameLoop, 100);
+        gameLoopId = setTimeout(gameLoop, 100);
     }
 }
 
-draw();
-gameLoop();
+// Event listeners
+document.addEventListener("keydown", changeDirection);
+
+startBtn.addEventListener("click", startGame);
+
+restartBtn.addEventListener("click", () => {
+    startGame();
+});
+
+// Initialize first frame (game not running until Start pressed)
+initGame();
